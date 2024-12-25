@@ -1,0 +1,35 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  compile:
+    name: Compile resume pdf and preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Run the build process with Docker
+        uses: addnab/docker-run-action@v3
+        with:
+          image: thomasweise/docker-texlive-full:latest
+          options: -v ${{ github.workspace }}:/data
+          run: |
+            cd data
+            pdflatex brian_joseph_resume.tex
+
+      - name: Install Poppler Utils
+        run: sudo apt-get install -y poppler-utils
+
+      - name: Convert PDF to PNG
+        run: pdftoppm -png -singlefile brian_joseph_resume.pdf brian_joseph_resume_preview
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update resume PDF and preview image
+          file_pattern: "brian_joseph_resume.pdf brian_joseph_resume_preview.png"
